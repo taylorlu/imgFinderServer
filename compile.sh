@@ -1,0 +1,1 @@
+gcc -o imgFinderServer src/imgFinderServer.cpp src/utils.cpp src/cJSON.c -L/usr/local/lib64 -lopencv_world  -L/usr/local/share/OpenCV/3rdparty/lib64 -llibprotobuf -llibjpeg -llibpng -llibjasper -lIlmImf -littnotify -lrabbitmq -lz -ldl -lm -lpthread -lrt -lstdc++
