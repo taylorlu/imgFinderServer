@@ -639,6 +639,7 @@ int main(int argc, const char * argv[]) {
 					params->mq_exchange_out = string(mq_exchange_out);
 
 					hash2Thread(curSubfolders[i], params, machineId);
+					subfolders.push_back(curSubfolders[i]);
 				}
 			}
 		}
