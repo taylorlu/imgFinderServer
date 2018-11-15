@@ -111,10 +111,10 @@ amqp_connection_state_t init_rabbitmq_consume(R_Params *params) {	//fanoutExchan
 		return NULL;
 	}
 
-	amqp_basic_consume_ok_t *result = amqp_basic_consume(conn, 1, amqp_cstring_bytes(queue_name), amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-	if (result == NULL) {
-		return NULL;
-	}
+	//amqp_basic_consume_ok_t *result = amqp_basic_consume(conn, 1, amqp_cstring_bytes(queue_name), amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
+	//if (result == NULL) {
+	//	return NULL;
+	//}
 	return conn;
 }
 
@@ -344,16 +344,28 @@ void *retrieveActionThread(void *a) {
 		}
 
 		// Get Message from MQ
-		amqp_envelope_t envelope;
-		amqp_rpc_reply_t rpc_reply = amqp_consume_message(consume_conn, &envelope, NULL, 0);
-		if (rpc_reply.reply_type != AMQP_RESPONSE_NORMAL) {
-			printf("Warning: not AMQP_RESPONSE_NORMAL.\n");
-			amqp_destroy_envelope(&envelope);
+		amqp_rpc_reply_t rpc_reply;
+		do {
+			rpc_reply = amqp_basic_get(consume_conn, 1, amqp_cstring_bytes(blockId), 1);
+		} while (rpc_reply.reply_type == AMQP_RESPONSE_NORMAL &&
+			rpc_reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD);
+		if (!(rpc_reply.reply_type == AMQP_RESPONSE_NORMAL || rpc_reply.reply.id == AMQP_BASIC_GET_OK_METHOD)) {
+			printf("Error: --amqp_basic_get-- error.\n");
 			goto timeout;
 		}
-		int len = (int)envelope.message.body.len;
+
+		amqp_message_t message;
+		rpc_reply = amqp_read_message(consume_conn, 1, &message, 0);
+		if (rpc_reply.reply_type != AMQP_RESPONSE_NORMAL) {
+			printf("Error: --amqp_read_message-- error.\n");
+			goto timeout;
+		}
+
 		memset(data, 0, 1024 * 1024);
-		memcpy(data, envelope.message.body.bytes, len);
+		memcpy(data, message.body.bytes, message.body.len);
+		amqp_destroy_message(&message);
+		amqp_maybe_release_buffers(consume_conn);
+
 		cJSON *json = cJSON_Parse((const char *)data);
 		if (json == NULL) {
 			printf("Not Json Message:  %s\n", data);
@@ -362,21 +374,21 @@ void *retrieveActionThread(void *a) {
 		char taskId[100];
 		cJSON *taskSub = cJSON_GetObjectItem(json, "taskId");
 		if (taskSub == NULL) {
+			printf("Not Json Message:  %s\n", data);
 			goto timeout;
 		}
 		strcpy(taskId, taskSub->valuestring);
 		cJSON *bytesSub = cJSON_GetObjectItem(json, "bytes");
 		if (bytesSub == NULL) {
+			printf("Not Json Message:  %s\n", data);
 			goto timeout;
 		}
 		char *bytes = bytesSub->valuestring;
 		
 		memset(data, 0, 1024 * 1024);
-		len = base64_decode(string(bytes), data);
+		int len = base64_decode(string(bytes), data);
 		printf("taskId = %s, len = %d, blockId = %s\n", taskId, len, blockId);
 		cJSON_Delete(json);
-
-		amqp_destroy_envelope(&envelope);
 
 		// Parse Message
 		memset(topK, 0, 100 * 1000 * 1000 * sizeof(int));
@@ -492,7 +504,7 @@ void *retrieveActionThread(void *a) {
 			char body[500] = { 0 };
 			sprintf(body, "{\"code\": 0,\"prob\":%f,\"blockId\":\"%s\",\"msg\":\"ok\",\"keyId\": %d,\"taskId\":\"%s\"}", candidates_vec[0].second, blockId, candidates_vec[0].first, taskId);
 			amqp_basic_publish(publish_conn, 1, amqp_cstring_bytes(exchange_out), amqp_cstring_bytes(""), 0, 0, &props, amqp_cstring_bytes(body));
-			// printf("body = %s\n", body);
+			 printf("body = %s\n", body);
 		}
 		else {
 			amqp_basic_properties_t props;
@@ -502,7 +514,7 @@ void *retrieveActionThread(void *a) {
 			char body[500] = { 0 };
 			sprintf(body, "{\"code\": -1,\"prob\":0,\"blockId\":\"%s\",\"msg\":\"null\",\"keyId\": -1,\"taskId\":\"%s\"}", blockId, taskId);
 			amqp_basic_publish(publish_conn, 1, amqp_cstring_bytes(exchange_out), amqp_cstring_bytes(""), 0, 0, &props, amqp_cstring_bytes(body));
-			// printf("body = %s\n", body);
+			 printf("body = %s\n", body);
 		}
 	}
 
