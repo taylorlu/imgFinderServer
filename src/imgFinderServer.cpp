@@ -377,8 +377,6 @@ void *retrieveActionThread(void *a) {
 		cJSON_Delete(json);
 
 		amqp_destroy_envelope(&envelope);
-		sleep(5);
-		goto timeout;
 
 		// Parse Message
 		memset(topK, 0, 100 * 1000 * 1000 * sizeof(int));
