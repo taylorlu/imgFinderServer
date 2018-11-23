@@ -293,7 +293,7 @@ int img2hashtable(const char *imgPath, const char *basicHashPath, const char *st
 
 void *retrieveActionThread(void *a) {
 
-	int *topK = (int *)malloc(100 * 1000 * 1000 * sizeof(int));
+	int *topK = (int *)malloc(100 * 1000 * sizeof(int));
 	unsigned char* data = (unsigned char*)malloc(10 * 1024 * 1024);
 
 	R_Params *params = (R_Params *)a;
@@ -347,6 +347,7 @@ void *retrieveActionThread(void *a) {
 		amqp_rpc_reply_t rpc_reply;
 		do {
 			rpc_reply = amqp_basic_get(consume_conn, 1, amqp_cstring_bytes(blockId), 1);
+			amqp_maybe_release_buffers(consume_conn);
 		} while (rpc_reply.reply_type == AMQP_RESPONSE_NORMAL &&
 			rpc_reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD);
 		if (!(rpc_reply.reply_type == AMQP_RESPONSE_NORMAL || rpc_reply.reply.id == AMQP_BASIC_GET_OK_METHOD)) {
@@ -365,6 +366,9 @@ void *retrieveActionThread(void *a) {
 		memcpy(data, message.body.bytes, message.body.len);
 		amqp_destroy_message(&message);
 		amqp_maybe_release_buffers(consume_conn);
+
+		timer dealTimer;
+		dealTimer.restart();
 
 		cJSON *json = cJSON_Parse((const char *)data);
 		if (json == NULL) {
@@ -391,7 +395,7 @@ void *retrieveActionThread(void *a) {
 		cJSON_Delete(json);
 
 		// Parse Message
-		memset(topK, 0, 100 * 1000 * 1000 * sizeof(int));
+		memset(topK, 0, 100 * 1000 * sizeof(int));
 		int ptr = 0;
 		int index = 0;
 
@@ -405,13 +409,14 @@ void *retrieveActionThread(void *a) {
 		//Begin Retrieve Hashtable
 		map<int, Point2f> mapCoords;
 		map<int, int> topKCount;
+		unordered_map<int, int> matchMaps;
+		matchMaps.reserve(1000 * 100);
 
 		vector<Point2f> vecCoords;
 		int k = 0;
 		for (int i = 0; i<kptsCount; i++) {
 
-			unordered_map<int, int> matchMaps;
-			matchMaps.reserve(1000 * 100);
+			matchMaps.clear();
 
 			vector<uint32_t> miniHashVals;
 
@@ -435,7 +440,7 @@ void *retrieveActionThread(void *a) {
 			unsigned short pty = *((unsigned short *)(data + ptr));
 			ptr += sizeof(unsigned short);
 
-			flann_index->getNeighborsByHash(miniHashVals, matchMaps, topK, index, 4);
+			flann_index->getNeighborsByHash(miniHashVals, matchMaps, topK, index, 3);
 
 			for (; k<index; k++) { //multi to multi, topK[k] = index of point in hashtable
 				mapCoords[topK[k]] = Point2f(ptx, pty);
@@ -516,6 +521,8 @@ void *retrieveActionThread(void *a) {
 			amqp_basic_publish(publish_conn, 1, amqp_cstring_bytes(exchange_out), amqp_cstring_bytes(""), 0, 0, &props, amqp_cstring_bytes(body));
 			 printf("body = %s\n", body);
 		}
+		elapsed = dealTimer.elapsed_s();
+		amqp_maybe_release_buffers(publish_conn);
 	}
 
 	free(data);
