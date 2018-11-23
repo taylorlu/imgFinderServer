@@ -367,9 +367,6 @@ void *retrieveActionThread(void *a) {
 		amqp_destroy_message(&message);
 		amqp_maybe_release_buffers(consume_conn);
 
-		timer dealTimer;
-		dealTimer.restart();
-
 		cJSON *json = cJSON_Parse((const char *)data);
 		if (json == NULL) {
 			printf("Not Json Message:  %s\n", data);
