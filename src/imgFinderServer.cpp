@@ -247,7 +247,7 @@ int img2hashtable(const char *imgPath, const char *basicHashPath, const char *st
 	flann::Index *flann_index = new flann::Index(Mat(cv::Size(61, 1), CV_8U), flann::SavedIndexParams(basicHashPath), cvflann::FLANN_DIST_HAMMING);
 
 	Ptr<AKAZE> akaze = AKAZE::create();
-	akaze->setThreshold(0.002);
+	akaze->setThreshold(0.003);
 
 	vector<int> idx2Imgs;
 	vector<KeyPoint> kpts;
@@ -388,7 +388,7 @@ void *retrieveActionThread(void *a) {
 		
 		memset(data, 0, 1024 * 1024);
 		int len = base64_decode(string(bytes), data);
-		printf("taskId = %s, len = %d, blockId = %s\n", taskId, len, blockId);
+		// printf("taskId = %s, len = %d, blockId = %s\n", taskId, len, blockId);
 		cJSON_Delete(json);
 
 		// Parse Message
@@ -484,7 +484,7 @@ void *retrieveActionThread(void *a) {
 				}
 			}
 			float prob = (float)ransacCount / imgKptCounts[iter->first];
-			if (prob>0.03 && ransacCount>15) {
+			if (prob>0.03 && ransacCount>10) {
 				candidates[iter->first] = prob;
 
 			}
@@ -506,7 +506,7 @@ void *retrieveActionThread(void *a) {
 			char body[500] = { 0 };
 			sprintf(body, "{\"code\": 0,\"prob\":%f,\"blockId\":\"%s\",\"msg\":\"ok\",\"keyId\": %d,\"taskId\":\"%s\"}", candidates_vec[0].second, blockId, candidates_vec[0].first, taskId);
 			amqp_basic_publish(publish_conn, 1, amqp_cstring_bytes(exchange_out), amqp_cstring_bytes(""), 0, 0, &props, amqp_cstring_bytes(body));
-			 printf("body = %s\n", body);
+			// printf("body = %s\n", body);
 		}
 		else {
 			amqp_basic_properties_t props;
@@ -516,7 +516,7 @@ void *retrieveActionThread(void *a) {
 			char body[500] = { 0 };
 			sprintf(body, "{\"code\": -1,\"prob\":0,\"blockId\":\"%s\",\"msg\":\"null\",\"keyId\": -1,\"taskId\":\"%s\"}", blockId, taskId);
 			amqp_basic_publish(publish_conn, 1, amqp_cstring_bytes(exchange_out), amqp_cstring_bytes(""), 0, 0, &props, amqp_cstring_bytes(body));
-			 printf("body = %s\n", body);
+			// printf("body = %s\n", body);
 		}
 		elapsed = dealTimer.elapsed_s();
 		amqp_maybe_release_buffers(publish_conn);
