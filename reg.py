@@ -25,8 +25,8 @@ basicIndexPath = 'BASIC_Index.dat'
 n_threads = 20
 
 MAX_HASH_SIZE = 90*1000*1000
-taskUrl = "http://192.168.179.119:9011/arImageHandle/task"
-responseUrl = "http://192.168.179.119:9011/arImageHandle/result"
+taskUrl = ''
+responseUrl = ''
 renewFolderTimerGap = 60*1
 mergeTimerGap = 60*1.5
 mutex = threading.Lock()
@@ -57,7 +57,7 @@ def timeGapOldFolderList(baseFolder, gap = mergeTimerGap):   #past folders, will
     return validList
 
 def extractFeatureThread():
-    global machineId, tmpBasePath, hashFolder, curMergeFolder
+    global machineId, tmpBasePath, hashFolder, curMergeFolder, taskUrl, responseUrl
 
     while(1):
         try:
@@ -196,7 +196,7 @@ def mergeHashTable():
     timer.start()
 
 def main(argv):
-    global machineId, tmpBasePath, hashFolder, curMergeFolder
+    global machineId, tmpBasePath, hashFolder, curMergeFolder, taskUrl, responseUrl
 
     jsonConfig = argv[1]
     load_f = open(jsonConfig, 'r')
@@ -204,6 +204,8 @@ def main(argv):
     machineId = hjson['MachineId']
     hashFolder = hjson['HashFolder']
     tmpBasePath = hjson['TmpFolder']
+    taskUrl = hjson['TaskUrl'] + '/task'
+    responseUrl = hjson['TaskUrl'] + '/result'
 
     if(not os.path.exists(hashFolder) or not os.path.exists(tmpBasePath)):
         print("File path not exist, check your json file.\n")
