@@ -61,3 +61,17 @@ imgFinderServer有多个执行入口：
 
 **启动：**
 `./imgFinderServer --serve retrieve.json`
+
+# baseline
+1. 配置：`Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz, 8 Cores, 32 processors`，检索量100,000张图片。
+2. 耗时：每张图在600ms左右。
+3. 准确率：手机扫图的准确率100%。[iOS手机扫图Demo](https://github.com/taylorlu/imgFinder)
+4. 内存占用：占用10G RAM，平均1万张1G内存。
+
+优点：
+1. 准确率非常高，不同于Fisher Vector和VLAD等需要使用GMM聚类进行词典生成，直接采用点匹配。
+2. 传输量非常小，每张图在20kB以下，包含(4B*5 + 2B*2) * 800点 = 19.2KB，20B表示每个点的哈希值占用字节数，4B表示每个点的x,y坐标占用字节数，点数不同，传输量不同。
+
+缺点：
+1. 内存量占用太大，因为要多对多匹配，100,000张图片共有将近1亿个特征点。
+2. 检索速度慢，分拆成多台服务器能解决这个问题。
