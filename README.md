@@ -69,7 +69,7 @@ imgFinderServer有多个执行入口：
 4. 内存占用：占用10G RAM，平均1万张1G内存。
 
 优点：
-1. 准确率非常高，不同于Fisher Vector和VLAD等需要使用GMM聚类进行词典生成，直接采用点匹配。
+1. 准确率非常高，不同于Fisher Vector和VLAD等需要使用GMM聚类进行词典生成，直接采用点匹配。可参考[FVector](https://github.com/taylorlu/FVector)
 2. 传输量非常小，每张图在20kB以下，包含(4B*5 + 2B*2) * 800点 = 19.2KB，20B表示每个点的哈希值占用字节数，4B表示每个点的x,y坐标占用字节数，点数不同，传输量不同。
 
 缺点：
