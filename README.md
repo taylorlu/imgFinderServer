@@ -2,9 +2,9 @@
 一个精准的图像检索系统， 基于**AKAZE feature** 和 **LSH algorithm**.</br>
 支持多台机器分布式处理，检索中间结果通过RabbitMQ汇总。
 # prerequisites
-[OpenCV3.4.0](https://github.com/taylorlu/opencv-3.4.0)，修改了lsh处理哈希表的算法，增加了几个Api接口</br>
-RabbitMQ，用于分布式通信</br>
-Java后台，仅用来操作mysql数据库</br>
+1. [OpenCV3.4.0](https://github.com/taylorlu/opencv-3.4.0)，修改了lsh处理哈希表的算法，增加了几个Api接口</br>
+2. RabbitMQ，用于分布式通信</br>
+3. Java后台，仅用来操作mysql数据库</br>
 # compile
 `./compile.sh`
 编译c++文件生成imgFinderServer文件。
@@ -36,7 +36,7 @@ imgFinderServer有多个执行入口：
 │   │   └── DayIndexMap.dat</br>
 
     可能还会有一个reload.dat空文件，用来标识当前注册进程正在merge的目录，检索进程需经常reload最新的哈希表确保数据的完整性。
-    每次合并生成的`DayLSHashTable.dat`如果>90M（在`reg.py`中配置），会在`HashFolder`下新建一个目录。</br>
+    每次合并生成的`DayLSHashTable.dat`如果>90M（在`reg.py`中配置），会在`HashFolder`下新建一个目录。
 3. `TmpFolder` 注册过程中暂存的IndexMap和dat和LSHashTable文件，每隔一段时间（reg.py中指定）会自动合并到大文件中</br>
 4. `TaskUrl` Java服务器接口，将多个Machine处理的图片info信息存储到mysql数据库中</br>
 
@@ -69,8 +69,8 @@ imgFinderServer有多个执行入口：
 4. 内存占用：占用10G RAM，平均1万张1G内存。
 
 优点：
-1. 准确率非常高，不同于Fisher Vector和VLAD等需要使用GMM聚类进行词典生成，直接采用点匹配。可参考[FVector](https://github.com/taylorlu/FVector)。
-2. 传输量非常小，每张图在20kB以下，包含(4B * 5 + 2B * 2) * 800点 = 19.2KB，20B表示每个点的哈希值占用字节数，4B表示每个点的x,y坐标占用字节数，点数不同，传输量不同。
+1. 准确率高，不同于Fisher Vector和VLAD等需要使用GMM聚类进行词典生成，直接采用点匹配。可参考[FVector](https://github.com/taylorlu/FVector)。
+2. 传输量小，每张图在20kB以下，包含(4B * 5 + 2B * 2) * 800点 = 19.2KB，20B表示每个点的哈希值占用字节数，4B表示每个点的x,y坐标占用字节数，点数不同，数据量不同。
 
 缺点：
 1. 内存量占用太大，因为要多对多匹配，100,000张图片共有将近1亿个特征点。
