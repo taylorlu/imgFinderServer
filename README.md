@@ -1,6 +1,7 @@
 # outline
 一个精准的图像检索系统， 基于**AKAZE feature** 和 **LSH algorithm**.</br>
 支持多台机器分布式处理，检索中间结果通过RabbitMQ汇总。
+![failed](https://github.com/taylorlu/imgFinderServer/blob/master/pic/arch.jpg)
 # prerequisites
 1. [OpenCV3.4.0](https://github.com/taylorlu/opencv-3.4.0)，修改了lsh处理哈希表的算法，增加了几个Api接口</br>
 2. RabbitMQ，用于分布式通信</br>
