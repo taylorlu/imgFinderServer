@@ -490,6 +490,8 @@ void *retrieveActionThread(void *a) {
 			}
 			double elapsed = dealTimer.elapsed_s();
 			if (elapsed > dealTimeLimit) {
+				printf("%s: retrieve timeout.\n", CurrentTime());
+				fprintf(file, "%s: retrieve timeout.\n", CurrentTime());
 				goto timeout;
 			}
 		}
@@ -508,6 +510,8 @@ void *retrieveActionThread(void *a) {
 			cc++;
 			double elapsed = dealTimer.elapsed_s();
 			if (elapsed > dealTimeLimit) {
+				printf("%s: retrieve timeout.\n", CurrentTime());
+				fprintf(file, "%s: retrieve timeout.\n", CurrentTime());
 				goto timeout;
 			}
 			vector<Point2f> p01;

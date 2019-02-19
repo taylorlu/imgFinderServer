@@ -64,7 +64,8 @@ def extractFeatureThread():
             res = requests.post(taskUrl)
             hjson = json.loads(res.text)
         except Exception, e:
-            print(str(e))
+            print("taskUrl request ERROR: %s".format(taskUrl))
+            print("Error Message: '%s'".format(str(e)))
             continue
         
         if(hjson['code']==0):
@@ -105,7 +106,8 @@ def extractFeatureThread():
                 try:
                     res = requests.post(responseUrl, jsonstr)
                 except Exception, e:
-                    print(str(e))
+                    print("img2hashtable ERROR: %s".format(jsonstr))
+                    print("Error Message: '%s'".format(str(e)))
 
 def mergeNewFolder():
     global curMergeFolder
@@ -184,7 +186,8 @@ def mergeHashTable():
                     res = requests.post(responseUrl, jsonstr)
                     hjson = json.loads(res.text)
                 except Exception, e:
-                    print(str(e))
+                    print("mergeFromDir ERROR: %s".format(jsonstr))
+                    print("Error Message: '%s'".format(str(e)))
                     continue
                 if(hjson['code']==0):
                     break
