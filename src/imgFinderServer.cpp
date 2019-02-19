@@ -4,7 +4,8 @@
 //  Created by LuDong on 2018/8/28.
 //  Copyright © 2018年 LuDong. All rights reserved.
 //
-
+#include <cstdio>
+#include <ctime>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/features2d.hpp>
 #include <opencv2/imgproc.hpp>
@@ -26,6 +27,19 @@
 
 using namespace cv;
 using namespace std;
+
+string CurrentTime() {
+
+    time_t rawtime;
+    struct tm *ptminfo;
+
+    time(&rawtime);
+    ptminfo = localtime(&rawtime);
+    char currentTime[100] = {0};
+    sprintf(currentTime, "%02d-%02d-%02d %02d:%02d:%02d",
+            ptminfo->tm_year + 1900, ptminfo->tm_mon + 1, ptminfo->tm_mday, ptminfo->tm_hour, ptminfo->tm_min, ptminfo->tm_sec);
+    return string(currentTime);
+}
 
 bool comp_by_value(pair<int, float> &p1, pair<int, float> &p2){
 	return p1.second > p2.second;
@@ -74,23 +88,33 @@ amqp_connection_state_t init_rabbitmq_consume(R_Params *params) {	//fanoutExchan
 
 	amqp_socket_t *socket = amqp_tcp_socket_new(conn);
 	if (!socket){
+		printf("%s: RabbitMQ/consume: socket null.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: socket null.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	int rc = amqp_socket_open(socket, ip, port);
 	if (rc){
+		printf("%s: RabbitMQ/consume: amqp_socket_open error.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: amqp_socket_open error.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	amqp_rpc_reply_t rpc_reply = amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password);
 	if (rpc_reply.reply_type != AMQP_RESPONSE_NORMAL){
+		printf("%s: RabbitMQ/consume: rpc_reply.reply_type != AMQP_RESPONSE_NORMAL.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: rpc_reply.reply_type != AMQP_RESPONSE_NORMAL.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	if (amqp_channel_open(conn, 1) == NULL) {
+		printf("%s: RabbitMQ/consume: amqp_channel_open failed.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: amqp_channel_open failed.\n", CurrentTime().c_str());
 		return NULL;
 	}
 	if (amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL) {
+		printf("%s: RabbitMQ/consume: amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
@@ -104,10 +128,14 @@ amqp_connection_state_t init_rabbitmq_consume(R_Params *params) {	//fanoutExchan
 
 	amqp_queue_declare_ok_t *res = amqp_queue_declare(conn, 1, amqp_cstring_bytes(queue_name), 0, 1, 0, 0, table);
 	if (res == NULL) {
+		printf("%s: RabbitMQ/consume: amqp_queue_declare failed.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: amqp_queue_declare failed.\n", CurrentTime().c_str());
 		return NULL;
 	}
 	amqp_queue_bind(conn, 1, amqp_cstring_bytes(queue_name), amqp_cstring_bytes(exchange), amqp_cstring_bytes(""), amqp_empty_table);
 	if (amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL) {
+		printf("%s: RabbitMQ/consume: amqp_queue_bind failed.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/consume: amqp_queue_bind failed.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
@@ -129,23 +157,33 @@ amqp_connection_state_t init_rabbitmq_publish(R_Params *params) {	//callbackExch
 
 	amqp_socket_t *socket = amqp_tcp_socket_new(conn);
 	if (!socket){
+		printf("%s: RabbitMQ/publish: amqp_tcp_socket_new.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/publish: amqp_tcp_socket_new.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	int rc = amqp_socket_open(socket, ip, port);
 	if (rc){
+		printf("%s: RabbitMQ/publish: amqp_socket_open.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/publish: amqp_socket_open.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	amqp_rpc_reply_t rpc_reply = amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username, password);
 	if (rpc_reply.reply_type != AMQP_RESPONSE_NORMAL){
+		printf("%s: RabbitMQ/publish: amqp_login failed.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/publish: amqp_login failed.\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	if (amqp_channel_open(conn, 1) == NULL) {
+		printf("%s: RabbitMQ/publish: amqp_channel_open failed.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/publish: amqp_channel_open failed.\n", CurrentTime().c_str());
 		return NULL;
 	}
 	if (amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL) {
+		printf("%s: RabbitMQ/publish: amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL.\n", CurrentTime().c_str());
+		fprintf(file, "%s: RabbitMQ/publish: amqp_get_rpc_reply(conn).reply_type != AMQP_RESPONSE_NORMAL.\n", CurrentTime().c_str());
 		return NULL;
 	}
 	return conn;
@@ -308,13 +346,15 @@ void *retrieveActionThread(void *a) {
 
 	amqp_connection_state_t consume_conn = init_rabbitmq_consume(params);
 	if (consume_conn == NULL) {
-		printf("init_rabbitmq_consume FAILED..\n");
+		printf("%s: init_rabbitmq_consume FAILED..\n", CurrentTime().c_str());
+		fprintf(file, "%s: init_rabbitmq_consume FAILED..\n", CurrentTime().c_str());
 		return NULL;
 	}
 
 	amqp_connection_state_t publish_conn = init_rabbitmq_publish(params);
 	if (publish_conn == NULL) {
-		printf("init_rabbitmq_publish FAILED..\n");
+		printf("%s: init_rabbitmq_publish FAILED..\n", CurrentTime().c_str());
+		fprintf(file, "%s: init_rabbitmq_publish FAILED..\n", CurrentTime().c_str());
 		return NULL;
 	}
 	timer reloadTimer;
@@ -351,14 +391,16 @@ void *retrieveActionThread(void *a) {
 		} while (rpc_reply.reply_type == AMQP_RESPONSE_NORMAL &&
 			rpc_reply.reply.id == AMQP_BASIC_GET_EMPTY_METHOD);
 		if (!(rpc_reply.reply_type == AMQP_RESPONSE_NORMAL || rpc_reply.reply.id == AMQP_BASIC_GET_OK_METHOD)) {
-			printf("Error: --amqp_basic_get-- error.\n");
+			printf("%s: Error: --amqp_basic_get-- error.\n", CurrentTime().c_str());
+			fprintf(file, "%s: Error: --amqp_basic_get-- error.\n", CurrentTime().c_str());
 			goto timeout;
 		}
 
 		amqp_message_t message;
 		rpc_reply = amqp_read_message(consume_conn, 1, &message, 0);
 		if (rpc_reply.reply_type != AMQP_RESPONSE_NORMAL) {
-			printf("Error: --amqp_read_message-- error.\n");
+			printf("%s: Error: --amqp_read_message-- error.\n", CurrentTime().c_str());
+			fprintf(file, "%s: Error: --amqp_read_message-- error.\n", CurrentTime().c_str());
 			goto timeout;
 		}
 
@@ -369,19 +411,22 @@ void *retrieveActionThread(void *a) {
 
 		cJSON *json = cJSON_Parse((const char *)data);
 		if (json == NULL) {
-			printf("Not Json Message:  %s\n", data);
+			printf("%s: Not Json Message:  %s\n", CurrentTime().c_str(), data);
+			fprintf(file, "%s: Not Json Message:  %s\n", CurrentTime().c_str(), data);
 			goto timeout;
 		}
 		char taskId[100];
 		cJSON *taskSub = cJSON_GetObjectItem(json, "taskId");
 		if (taskSub == NULL) {
-			printf("Not Json Message:  %s\n", data);
+			printf("%s: Not Json Message:  %s\n", CurrentTime().c_str(), data);
+			fprintf(file, "%s: Not Json Message:  %s\n", CurrentTime().c_str(), data);
 			goto timeout;
 		}
 		strcpy(taskId, taskSub->valuestring);
 		cJSON *bytesSub = cJSON_GetObjectItem(json, "bytes");
 		if (bytesSub == NULL) {
-			printf("Not Json Message:  %s\n", data);
+			printf("%s: Not Json Message:  %s\n", CurrentTime().c_str(), data);
+			fprintf(file, "%s: Not Json Message:  %s\n", CurrentTime().c_str(), data);
 			goto timeout;
 		}
 		char *bytes = bytesSub->valuestring;
@@ -491,6 +536,8 @@ void *retrieveActionThread(void *a) {
 		}
 		double elapsed = dealTimer.elapsed_s();
 		if (elapsed > dealTimeLimit) {
+			printf("%s: retrieve timeout.\n", CurrentTime());
+			fprintf(file, "%s: retrieve timeout.\n", CurrentTime());
 			goto timeout;
 		}
 
@@ -565,6 +612,8 @@ void hash2Thread(string folder, R_Params *params, char *machineId) {
 		params->needReload = 1;
 		vector<string> tmp = splitString(folder, "/");
 		params->blockId = string(machineId) + "_" + tmp[tmp.size() - 1];	//blockId = machineId_blockId
+		fprintf(file, "%s: %s has loaded.\n", CurrentTime().c_str(), params->blockId.c_str());
+		printf("%s: %s has loaded.\n", CurrentTime().c_str(), params->blockId.c_str());
 
 		pthread_t threads;
 		pthread_create(&threads, NULL, retrieveActionThread, (void*)params);
