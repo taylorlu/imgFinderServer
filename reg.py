@@ -59,55 +59,59 @@ def timeGapOldFolderList(baseFolder, gap = mergeTimerGap):   #past folders, will
 def extractFeatureThread():
     global machineId, tmpBasePath, hashFolder, curMergeFolder, taskUrl, responseUrl
 
-    while(1):
-        try:
-            res = requests.post(taskUrl)
-            hjson = json.loads(res.text)
-        except Exception, e:
-            print("taskUrl request ERROR: %s".format(taskUrl))
-            print("Error Message: '%s'".format(str(e)))
-            continue
-        
-        if(hjson['code']==0):
-            picId = hjson['info']['id']
-            picPath = hjson['info']['picPath']
-            
-            curTime = time.strftime("%Y%m%d%H%M%S", time.localtime())
-            newDir = os.path.join(tmpBasePath, curTime) #create new folder
-            
-            mutex.acquire()
-            validList = timeGapNewFolderList(tmpBasePath)
-            if(len(validList)==0):
-                if(not os.path.exists(newDir)):
-                    os.mkdir(newDir)
-            else:
-                newDir = validList[0]
-            mutex.release()
+    with requests.Session() as sess:
+        while(1):
+            try:
+                res = sess.post(taskUrl)
+                hjson = json.loads(res.text)
+            except Exception, e:
+                print("taskUrl request ERROR: {}".format(taskUrl))
+                print(e)
+                continue
 
-            cmdLine = './imgFinderServer --img2hashtable '+ picPath +' '+ basicHashPath +' '+ newDir +' '+ str(picId)
-            print (cmdLine)
-            p = subprocess.Popen(cmdLine, shell=True, close_fds=True, stdout=subprocess.PIPE)
-            p.communicate()
-            ret = p.returncode
-
-            if(ret!=0):
-                res_dict = dict()
-                res_dict['status'] = -ret
-                if(err_dict.has_key(ret)):
-                    res_dict['msg'] = err_dict[ret]
+            if(hjson['code']==0):
+                picId = hjson['info']['id']
+                picPath = hjson['info']['picPath']
+                
+                curTime = time.strftime("%Y%m%d%H%M%S", time.localtime())
+                newDir = os.path.join(tmpBasePath, curTime) #create new folder
+                
+                mutex.acquire()
+                validList = timeGapNewFolderList(tmpBasePath)
+                if(len(validList)==0):
+                    if(not os.path.exists(newDir)):
+                        os.mkdir(newDir)
                 else:
-                    res_dict['msg'] = "Error for execute: " + cmdLine
-                res_dict['id'] = picId
-                _, blockId = os.path.split(curMergeFolder)
-                res_dict['blockCode'] = machineId+ '_' +blockId
-                res_dict['keyId'] = ''
-                res_dict['time'] = time.strftime("%Y%m%d%H%M%S", time.localtime())
-                jsonstr = json.dumps(res_dict)
-                try:
-                    res = requests.post(responseUrl, jsonstr)
-                except Exception, e:
-                    print("img2hashtable ERROR: %s".format(jsonstr))
-                    print("Error Message: '%s'".format(str(e)))
+                    newDir = validList[0]
+                mutex.release()
+
+                cmdLine = './imgFinderServer --img2hashtable '+ picPath +' '+ basicHashPath +' '+ newDir +' '+ str(picId)
+                print (cmdLine)
+                p = subprocess.Popen(cmdLine, shell=True, close_fds=True, stdout=subprocess.PIPE)
+                p.communicate()
+                ret = p.returncode
+
+                if(ret!=0):
+                    res_dict = dict()
+                    res_dict['status'] = -ret
+                    if(err_dict.has_key(ret)):
+                        res_dict['msg'] = err_dict[ret]
+                    else:
+                        res_dict['msg'] = "Error for execute: " + cmdLine
+                    res_dict['id'] = picId
+                    _, blockId = os.path.split(curMergeFolder)
+                    res_dict['blockCode'] = machineId+ '_' +blockId
+                    res_dict['keyId'] = ''
+                    res_dict['time'] = time.strftime("%Y%m%d%H%M%S", time.localtime())
+                    jsonstr = json.dumps(res_dict)
+                    try:
+                        res = sess.post(responseUrl, jsonstr)
+                    except Exception, e:
+                        print("img2hashtable ERROR: {}".format(jsonstr))
+                        print(e)
+            else:
+                time.sleep(60)
+
 
 def mergeNewFolder():
     global curMergeFolder
@@ -183,11 +187,12 @@ def mergeHashTable():
             jsonstr = json.dumps(res_dict)
             for retry in range(3):
                 try:
-                    res = requests.post(responseUrl, jsonstr)
-                    hjson = json.loads(res.text)
+                    with requests.Session() as sess:
+                        res = sess.post(responseUrl, jsonstr)
+                        hjson = json.loads(res.text)
                 except Exception, e:
-                    print("mergeFromDir ERROR: %s".format(jsonstr))
-                    print("Error Message: '%s'".format(str(e)))
+                    print("mergeFromDir ERROR: {}".format(jsonstr))
+                    print(e)
                     continue
                 if(hjson['code']==0):
                     break
