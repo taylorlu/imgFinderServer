@@ -1,6 +1,0 @@
-{
-	"MachineId": "02",
-	"HashFolder": "/u01/dataset/imgFinderFolder3",
-	"TmpFolder": "./tmp",
-	"TaskUrl": "http://172.18.250.30:9011/arImageHandle"
-}

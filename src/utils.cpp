@@ -107,6 +107,25 @@ int appendIndexFile(string filename, vector<int> idx2Imgs, vector<unsigned short
 	return 0;
 }
 
+void writeImgPaths(string filename, vector<string> imgPaths) {
+
+    ofstream out(filename, ios::out);
+	for (int i = 0; i < imgPaths.size(); ++i) {
+		out << imgPaths[i] <<"\r\n";
+	}
+	out.close();
+}
+
+void loadImgPaths(string filename, vector<string> &imgPaths) {
+
+    ifstream in(filename, ios::in);
+    string imgPath;
+    while(getline(in, imgPath)) {
+        imgPaths.push_back(imgPath);
+    }
+	in.close();
+}
+
 int loadIndexFile(string filename, vector<int> &idx2Imgs, vector<unsigned short> &xPts, vector<unsigned short> &yPts, int &maxImageIdx, unordered_map<int, int> &imgKptCounts) {
 
 	if (!exist_file(filename)) {
@@ -160,66 +179,4 @@ vector<string> splitString(const std::string& str, const std::string& delimiter 
 		resultVec.push_back(s);
 	}
 	return resultVec;
-}
-
-int base64_decode(std::string const& encoded_string, unsigned char *ret) {
-	int in_len = encoded_string.size();
-	int i = 0;
-	int j = 0;
-	int in_ = 0;
-	unsigned char char_array_4[4], char_array_3[3];
-	int cc = 0;
-
-	while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
-		char_array_4[i++] = encoded_string[in_]; in_++;
-		if (i == 4) {
-			for (i = 0; i <4; i++)
-				char_array_4[i] = base64_chars.find(char_array_4[i]);
-
-			char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-			char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-			char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-			for (i = 0; (i < 3); i++) {
-				*(ret + cc) = char_array_3[i];
-				cc++;
-			}
-
-			i = 0;
-		}
-	}
-
-	if (i) {
-		for (j = i; j <4; j++)
-			char_array_4[j] = 0;
-
-		for (j = 0; j <4; j++)
-			char_array_4[j] = base64_chars.find(char_array_4[j]);
-
-		char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-		char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-		char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-
-		for (j = 0; (j < i - 1); j++) {
-			*(ret + cc) = char_array_3[j];
-			cc++;
-		}
-	}
-
-	return cc;
-}
-
-char *json_loader(const char *path) {
-
-	FILE *f;
-	long len;
-	char *content;
-	f = fopen(path, "rb");
-	fseek(f, 0, SEEK_END);
-	len = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	content = (char*)malloc(len + 1);
-	fread(content, 1, len, f);
-	fclose(f);
-	return content;
 }

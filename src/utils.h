@@ -20,54 +20,8 @@
 #include <cstring>
 #include <algorithm>
 #include <unordered_map>
-#include <sys/time.h>
-#include "cJSON.h"
 
 using namespace std;
-
-static const std::string base64_chars =
-"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-"abcdefghijklmnopqrstuvwxyz"
-"0123456789+/";
-
-static inline bool is_base64(unsigned char c) {
-	return (isalnum(c) || (c == '+') || (c == '/'));
-}
-
-class timer
-{
-public:
-	timer() {gettimeofday(&time, NULL); };
-	~timer() {};
-	/**
-	* Restart the timer.
-	*/
-	void restart()
-	{
-		gettimeofday(&time, NULL);
-	}
-	/**
-	* Measures elapsed time.
-	*
-	* @return The elapsed time
-	*/
-	unsigned long elapsed_us()
-	{
-		struct timeval end;
-		gettimeofday(&end, NULL);
-		unsigned long diff = 1000000 * (end.tv_sec - time.tv_sec) + end.tv_usec - time.tv_usec;
-		return diff;
-	}
-	double elapsed_s()
-	{
-		struct timeval end;
-		gettimeofday(&end, NULL);
-		double diff = (1000000 * (end.tv_sec - time.tv_sec) + end.tv_usec - time.tv_usec)/1000000.0;
-		return diff;
-	}
-private:
-	struct timeval time;
-};
 
 int startsWith(string s, string sub);
 
@@ -86,6 +40,10 @@ int loadIndexFile(string filename, int &kptCount);
 void writeIndexFile(string filename, /*string ptCount, vector<int> ptsCounts, */vector<int> idx2Imgs, vector<unsigned short> xPts, vector<unsigned short> yPts, int maxImageIdx);
 
 int appendIndexFile(string filename, vector<int> idx2Imgs, vector<unsigned short> xPts, vector<unsigned short> yPts, int &targetImgId);
+
+void writeImgPaths(string filename, vector<string> imgPaths);
+
+void loadImgPaths(string filename, vector<string> &imgPaths);
 
 vector<string> splitString(const string &str, const string &pattern);
 
