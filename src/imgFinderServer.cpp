@@ -53,6 +53,7 @@ int scanImages(vector<string> imagePaths, const char *basicHashPath, const char 
 
 	Ptr<AKAZE> akaze = AKAZE::create();
 	akaze->setThreshold(0.001);
+	int hashFileIndex = 0;
 	int imgIndex = 0;
 	int hashImageSize = 1000;
 	char hashPath[200] = { 0 };
@@ -63,12 +64,9 @@ int scanImages(vector<string> imagePaths, const char *basicHashPath, const char 
 	vector<unsigned short> yPts;
 
 	for (vector<string>::iterator iter = imagePaths.begin(); iter != imagePaths.end();) {
-		sprintf(hashPath, "%s/%d.LSHashTable", saveFolder, (int)imgIndex/hashImageSize);
-		indexPathSave = string(saveFolder) +string("/")+ to_string((int)imgIndex/hashImageSize) + string(".IndexMap");
-
-		Mat image = imread((*iter).c_str(), IMREAD_GRAYSCALE);
+		Mat image = imread(iter->c_str(), IMREAD_GRAYSCALE);
 		if (image.dims != 2) {  //read error.
-			printf("!! read error %s\n", hashPath);
+			printf("!! read error %s\n", iter->c_str());
 			imagePaths.erase(iter);
 			continue;
 		}
@@ -98,6 +96,8 @@ int scanImages(vector<string> imagePaths, const char *basicHashPath, const char 
 		}
 
 		if((imgIndex+1)%hashImageSize==0) {	//Store the hashtable of 1000(hashImageSize) images
+			sprintf(hashPath, "%s/%d.LSHashTable", saveFolder, hashFileIndex);
+			indexPathSave = string(saveFolder) +string("/")+ to_string(hashFileIndex) + string(".IndexMap");
 			printf("saved %s\n", hashPath);
 			flann_index->save(hashPath);
 			flann_index->release();
@@ -106,13 +106,14 @@ int scanImages(vector<string> imagePaths, const char *basicHashPath, const char 
 			xPts.clear();
 			yPts.clear();
 			flann_index = new flann::Index(Mat(cv::Size(61, 1), CV_8U), flann::SavedIndexParams(basicHashPath), cvflann::FLANN_DIST_HAMMING);
+			hashFileIndex++;
 		}
 		imgIndex++;
 		iter++;
 	}
-	if(imgIndex%hashImageSize!=0) {	//Store the hashtable of 1000(hashImageSize) images
-		sprintf(hashPath, "%s/%d.LSHashTable", saveFolder, (int)imgIndex/hashImageSize+1);
-		indexPathSave = string(saveFolder) +string("/")+ to_string((int)imgIndex/hashImageSize+1) + string(".IndexMap");
+	if((imgIndex+1)%hashImageSize!=0) {	//Store the hashtable of 1000(hashImageSize) images
+		sprintf(hashPath, "%s/%d.LSHashTable", saveFolder, hashFileIndex);
+		indexPathSave = string(saveFolder) +string("/")+ to_string(hashFileIndex) + string(".IndexMap");
 
 		printf("saved %s\n", hashPath);
 		flann_index->save(hashPath);
@@ -228,28 +229,25 @@ int retrieveFunction(const char *imagePath, vector<string> imgPathVector, R_Para
 		// }
 	}
 
+	free(topK);
+
 	//Return Result
 	if (candidates.size()>0) {
 		vector<pair<int, float>> candidates_vec(candidates.begin(), candidates.end());
 		sort(candidates_vec.begin(), candidates_vec.end(), comp_by_value);
 		for(vector<pair<int, float>>::iterator iter=candidates_vec.begin(); iter!=candidates_vec.end(); iter++) {
-			printf("Match Count %f, %s\n", candidates[iter->first], imgPathVector[iter->first].c_str());
+			printf("%s:%s\n", imagePath, imgPathVector[iter->first].c_str());
 		}
 		return candidates_vec[0].first;
 	}
-	else {
-		return -1;
-	}
 
-	free(topK);
 	return -1;
 }
 
 void showHelp() {
 	printf("Help:\r\n");
-	printf("--mergeFromDir srcDir, dstLshPath, dstIndexPath\n");
-	printf("--img2hashtable imgPath, hashPath, storePath, imgInternalId\n");
-	printf("--serve hashFolder imageFolder\r\n");
+	printf("--scanImages imagePathListFile, HashSaveFolder\n");
+	printf("--retrieve HashSaveFolder, imagePath\r\n");
 }
 
 R_Params *loadHash(string body) {
